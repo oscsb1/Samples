@@ -1,0 +1,191 @@
+﻿@page "/StudioPages/Operacoes/AgendaGeral01"
+@page "/StudioPages/Operacoes/AgendaGeral"
+
+
+@using InCorpApp.Pages.Componentes
+@using InCorpApp.Models
+@using InCorpApp.Constantes
+@using Blazorise.Components
+@using InCorpApp.Pages.StudioPages.Cadastro
+
+@inject IAuthorizationService authorizationService
+
+@layout StudioLayout
+
+@inherits AgendaGeralBase
+
+<AuthorizeView Roles="@Constante.RoleAdmUser()" Context="xx">
+    <Authorized>
+        <SFFrameExterno>
+            <ContentExterno>
+                <SFPageHeader>
+                    <SFHeader>
+                        @if (Resultado.Grave)
+                        {
+                            <ErrMsg Result="Resultado" />
+                        }
+                    </SFHeader>
+                </SFPageHeader>
+                <SFFrame>
+                    <Content>
+                        @if (ShowEdit)
+                        {
+                            <ProgramaAulaCadDetail Item="@SelectedRow" InterfaceAgenda="false" EditarComoParcela="false" AgendaGeral="true" OnCancel="@OnReturn" OnOk="OnReturn" />
+                        }
+                        else
+                        {
+                            <NewEditDelDetToolbar Filter="@Filter" ShowDetail="false" ShowEdit="@(!@Reagendar)" ShowDelete="false" ShowNew="false"
+                                                  Add1Caption="Agendar" Add1Click="@OnClickAgendar" ShowAdd1="@Reagendar" Add1IconClass="fa fa-calendar"
+                                                  EditClick="@OnEditClick"
+                                                  Primeiro="@Primeiro" Proximo="@Proximo" Anterior="@Anterior" Ultimo="@Ultimo" TotalPages="@TotalPages" CurrentPage="@CurrentPage"
+                                                  ShowVoltar="@Reagendar" VoltarClick="@OnVoltar">
+                                <ChildBeforeFiltro>
+                                    @if (Studios != null)
+                                    {
+                                        @if (Studios.Count > 1)
+                                        {
+                                            <Buttons>
+                                                <SelectList Data="@Studios" TextField="@((item) => item.Nome)" Class="myselect" Style="max-width: 150px; margin-top: 4px;margin-right:4px;"
+                                                            ValueField="@((item) => item.Id)" TItem="Studio" TValue="int"
+                                                            SelectedValue="@Studio.Id" SelectedValueChanged="@MyListStudioValueChangedHandler" />
+                                            </Buttons>
+                                        }
+                                    }
+                                    @if (!Reagendar)
+                                    {
+                                        <Buttons>
+                                            <Label Class="myfieldlabel" Style="max-width:40px;text-align:center">De </Label>
+                                            <SFDateTimeEdit Class="myfielddatetoolbar" @bind-Date="@DtIni" TValue="DateTime" />
+                                            <Label Class="myfieldlabel" Style="max-width:40px;text-align:center">até </Label>
+                                            <SFDateTimeEdit Class="myfielddatetoolbar" @bind-Date="@DtFim" TValue="DateTime" />
+                                            <Button Class="btn-outline-primary mybtshrink" @onclick="@OnMesAnt" id="btant025"><Icon Class="fa fa-step-backward" Margin="Margin.Is1.FromLeft" /></Button>
+                                            <Button Class="btn-outline-primary mybtshrink" @onclick="@OnMesDep" id="btdep025"><Icon Class="fa fa-step-forward" Margin="Margin.Is2.FromRight" /></Button>
+                                        </Buttons>
+                                    }
+                                    <Buttons>
+                                        <Label Class="myfieldlabel" Style="max-width:70px;min-width:70px;text-align:center">Aluno: </Label>
+                                        <Autocomplete Class="myautocomplete" Data="@Alunos" Size="Size.ExtraSmall" @ref="@AutoC01" MinLength="3" TValue="int" TItem="Aluno" Style="margin-top: 4px;min-width:150px;max-width:150px;"
+                                                      TextField="@((item) => item.Nome)"
+                                                      ValueField="@((item) => item.Id)"
+                                                      Filter="AutocompleteFilter.Contains"
+                                                      SelectedValue="@SelectedRelacionamento"
+                                                      SelectedValueChanged="@RelacionamentoSearchHandler"
+                                                      Placeholder="aluno..." />
+                                    </Buttons>
+                                    @if (!Reagendar)
+                                    {
+                                        <Buttons>
+                                            <Label Class="myfieldlabel" Style="max-width:70px;min-width:70px;text-align: center">Professor: </Label>
+                                            <Autocomplete Class="myautocomplete" Data="@Professores" Size="Size.ExtraSmall" @ref="@AutoC02" MinLength="3" TValue="int" TItem="Professor" Style="margin-top:4px;min-width:150px;max-width:150px;"
+                                                          TextField="@((item) => item.Nome)"
+                                                          ValueField="@((item) => item.Id)"
+                                                          Filter="AutocompleteFilter.Contains"
+                                                          SelectedValue="@SelectedProfessor"
+                                                          SelectedValueChanged="@ProfessorSearchHandler"
+                                                          Placeholder="professor..." />
+                                        </Buttons>
+                                        <Buttons>
+                                            <Label Class="myfieldlabel" Style="max-width:70px;min-width:70px;text-align: center">Status: </Label>
+                                            <Dropdown Visible="@ShowDDStatus" Disabled="@Processando" Style="margin-top:4px;border-color:whitesmoke;border-style:solid;background-color:white;border-width:1px;height:25px;max-height:25px;">
+                                                <Button Class="mydropperiodo" Style="min-width:200px;margin-top:2px;border-color:whitesmoke;border-style:solid;background-color:white;border-width:1px;height:25px;max-height:25px;" @onclick="@OnClickDrop">
+                                                    @DropStatusnome
+                                                    <Icon Class="fa fa-caret-down" Style="float:right;color:#4e226c"></Icon>
+                                                </Button>
+                                                <DropdownMenu Class="mydropmenuperiodo" Style="min-width:200px">
+                                                    <Check TValue="bool" Style="font-size:12px;" CheckedChanged="@(()=> OnSelectListStatus(StatusAula.Agendada))" Checked="@(Checked(StatusAula.Agendada))">Agendada</Check>
+                                                    <Check TValue="bool" Style="font-size:12px;" CheckedChanged="@(()=> OnSelectListStatus(StatusAula.Cancelada))" Checked="@(Checked(StatusAula.Cancelada))">Cancelada</Check>
+                                                    <Check TValue="bool" Style="font-size:12px;" CheckedChanged="@(()=> OnSelectListStatus(StatusAula.Executada))" Checked="@(Checked(StatusAula.Executada))">Executada</Check>
+                                                    <Check TValue="bool" Style="font-size:12px;" CheckedChanged="@(()=> OnSelectListStatus(StatusAula.NaoProgramada))" Checked="@(Checked(StatusAula.NaoProgramada))">Não programada</Check>
+                                                    <Check TValue="bool" Style="font-size:12px;" CheckedChanged="@(()=> OnSelectListStatus(StatusAula.Programada))" Checked="@(Checked(StatusAula.Programada))">Programada - pendente confirmação do aluno</Check>
+                                                    <Check TValue="bool" Style="font-size:12px;" CheckedChanged="@(()=> OnSelectListStatus(StatusAula.ReAgendamento))" Checked="@(Checked(StatusAula.ReAgendamento))">Reagendamento pendente</Check>
+                                                    <Check TValue="bool" Style="font-size:12px;" CheckedChanged="@(()=> OnSelectListStatus(StatusAula.FaltaSemReagendamento))" Checked="@(Checked(StatusAula.FaltaSemReagendamento))">Falta - sem reagendamento</Check>
+                                                    <Check TValue="bool" Style="font-size:12px;" CheckedChanged="@(()=> OnSelectListStatus(StatusAula.Reserva))" Checked="@(Checked(StatusAula.Reserva))">Reserva</Check>
+                                                </DropdownMenu>
+                                            </Dropdown>
+                                        </Buttons>
+                                    }
+                                    <Buttons>
+                                        <Button Class="btn-outline-primary mybtshrink" @onclick="@OnPorData" Loading="@Isloading" id="btpes025" Margin="Margin.Is1.FromLeft">
+                                            <Icon Class="fa fa-search" Margin="Margin.Is1.FromLeft" />
+                                        </Button>
+                                    </Buttons>
+                                </ChildBeforeFiltro>
+                            </NewEditDelDetToolbar>
+                            <ErrMsg Result="Resultado" />
+
+                            @if (Items != null)
+                            {
+
+                                <div class="table-responsive-xl mytableresp" id="tabler" onscroll="scrolltb('tabler')">
+                                    <DataGrid Hoverable="true" Responsive="true" TItem="ProgramacaoAula" Data="@Items"
+                                              @ref="Grid"
+                                              @bind-SelectedRow="@SelectedRow"
+                                              CurrentPage="@CurrentPage"
+                                              PageSize="Constante.Pagesize" Sortable="true"
+                                              SelectedRowStyling="SelectedRowStyle" Filterable="@ShowFilter"
+                                              ShowPager="false" PageChanged="@PageChanged" Class="mygrid" HeaderRowStyling="@Constante.DataFilterRowStyling()" Narrow="true">
+
+                                        <ChildContent>
+                                            @if (!Reagendar)
+                                            {
+                                                <DataGridColumn HeaderCellClass="sticky-header-center" FilterCellClass="sticky-header-filter" TItem="ProgramacaoAula" Field="@nameof(ProgramacaoAula.Id)" Caption="nro" TextAlignment="TextAlignment.Center" />
+                                            }
+                                            <DataGridColumn HeaderCellClass="sticky-header-center" FilterCellClass="sticky-header-filter" TItem="ProgramacaoAula" Field="@nameof(ProgramacaoAula.DataProgramada)" Caption="Data" TextAlignment="TextAlignment.Center">
+                                                <DisplayTemplate>
+                                                    @($"{(context as ProgramacaoAula)?.DataProgramada.ToString("dd/MM/yyyy", Constante.Culture)}")
+                                                </DisplayTemplate>
+                                            </DataGridColumn>
+                                            @if (!Reagendar)
+                                            {
+                                                <DataGridColumn HeaderCellClass="sticky-header-center" FilterCellClass="sticky-header-filter" TItem="ProgramacaoAula" Field="@nameof(ProgramacaoAula.DiaV)" Caption="Dia" TextAlignment="TextAlignment.Center" />
+                                            }
+                                            <DataGridColumn HeaderCellClass="sticky-header-center" FilterCellClass="sticky-header-filter" TItem="ProgramacaoAula" Field="@nameof(ProgramacaoAula.HoraInicioV)" Caption="Início" TextAlignment="TextAlignment.Center" />
+                                            @if (!Reagendar)
+                                            {
+                                                <DataGridColumn HeaderCellClass="sticky-header-center" FilterCellClass="sticky-header-filter" TItem="ProgramacaoAula" Field="@nameof(ProgramacaoAula.HoraFimV)" Caption="Término" TextAlignment="TextAlignment.Center" />
+                                                <DataGridColumn HeaderCellClass="sticky-header-center" FilterCellClass="sticky-header-filter" TItem="ProgramacaoAula" Field="@nameof(ProgramacaoAula.StatusNome)" Caption="Situação" TextAlignment="TextAlignment.Center" />
+                                            }
+                                            <DataGridColumn HeaderCellClass="sticky-header-left" FilterCellClass="sticky-header-filter" TItem="ProgramacaoAula" Field="@nameof(ProgramacaoAula.AulaNome)" Caption="Aula" TextAlignment="TextAlignment.Start" />
+                                            <DataGridColumn HeaderCellClass="sticky-header-left" FilterCellClass="sticky-header-filter" TItem="ProgramacaoAula" Field="@nameof(ProgramacaoAula.NomeTipoAula)" Caption="Tipo" TextAlignment="TextAlignment.Start" />
+                                            <DataGridColumn HeaderCellClass="sticky-header-center" FilterCellClass="sticky-header-filter" TItem="ProgramacaoAula" Field="@nameof(ProgramacaoAula.AlunoPlanoId)" Caption="Nro.Plano" TextAlignment="TextAlignment.Center" />
+                                            <DataGridColumn HeaderCellClass="sticky-header-left" FilterCellClass="sticky-header-filter" TItem="ProgramacaoAula" Field="@nameof(ProgramacaoAula.AlunoNome)" Caption="Aluno" TextAlignment="TextAlignment.Start" />
+                                            <DataGridColumn HeaderCellClass="sticky-header-left" FilterCellClass="sticky-header-filter" TItem="ProgramacaoAula" Field="@nameof(ProgramacaoAula.ProfessorNome)" Caption="Professor" TextAlignment="TextAlignment.Start" />
+                                            @if (!Reagendar)
+                                            {
+                                                <DataGridColumn HeaderCellClass="sticky-header-left" FilterCellClass="sticky-header-filter" TItem="ProgramacaoAula" Field="@nameof(ProgramacaoAula.ProfessorRealNome)" Caption="Dada por" TextAlignment="TextAlignment.Start" />
+                                                <DataGridColumn HeaderCellClass="sticky-header-right" FilterCellClass="sticky-header-filter" TItem="ProgramacaoAula" Field="@nameof(ProgramacaoAula.ValorV)" Caption="Valor"
+                                                                TextAlignment="TextAlignment.End" />
+                                                <DataGridColumn HeaderCellClass="sticky-header-right" FilterCellClass="sticky-header-filter" TItem="ProgramacaoAula" Field="@nameof(ProgramacaoAula.ValorPagoV)" Caption="Valor pago"
+                                                                TextAlignment="TextAlignment.End" />
+                                            }
+                                            <DataGridColumn HeaderCellClass="sticky-header-left" FilterCellClass="sticky-header-filter" TItem="ProgramacaoAula" Field="@nameof(ProgramacaoAula.OBS)" Caption="OBS" TextAlignment="TextAlignment.Start" />
+                                        </ChildContent>
+
+                                    </DataGrid>
+                                </div>
+
+                            }
+                        }
+                    </Content>
+                </SFFrame>
+            </ContentExterno>
+        </SFFrameExterno>
+    </Authorized>
+    <NotAuthorized>
+        <NaoAutorizado />
+    </NotAuthorized>
+</AuthorizeView>
+
+
+
+
+
+
+
+
+
+
+
+
+
+

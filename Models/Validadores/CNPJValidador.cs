@@ -1,0 +1,166 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Text.RegularExpressions;
+
+namespace InCorpApp.Models
+{
+    public class CNPJValidador
+    {
+        public string SemMascara { get; private set; }
+        public string ComMascara
+        {
+            get
+            {
+                if (Valido)
+                {
+                    var v1 = SemMascara.Substring(0, 2);
+                    var v2 = SemMascara.Substring(2, 3);
+                    var v3 = SemMascara.Substring(5, 3);
+                    var v4 = SemMascara.Substring(8, 4);
+                    var v5 = SemMascara[12..];
+
+                    return $"{v1}.{v2}.{v3}/{v4}-{v5}";
+                }
+                else
+                {
+                    return string.Empty;
+                }
+            }
+        }
+        public bool Valido
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(SemMascara))
+                    return false;
+
+
+                if (ValidaCPF(SemMascara))
+                   return true; 
+
+                int[] multiplicador1 = new int[12] { 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2 };
+                int[] multiplicador2 = new int[13] { 6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2 };
+
+                if (SemMascara.Length != 14)
+                    return false;
+
+                int resto;
+                string digito;
+
+                string tempCnpj = SemMascara.Substring(0, 12);
+                int soma = 0;
+
+                for (int i = 0; i < 12; i++)
+                    soma += int.Parse(tempCnpj[i].ToString()) * multiplicador1[i];
+
+                resto = (soma % 11);
+
+                if (resto < 2) resto = 0;
+                else resto = 11 - resto;
+
+                digito = resto.ToString();
+
+                tempCnpj += digito;
+
+                soma = 0;
+
+                for (int i = 0; i < 13; i++)
+                    soma += int.Parse(tempCnpj[i].ToString()) * multiplicador2[i];
+
+                resto = (soma % 11);
+
+                if (resto < 2) resto = 0;
+                else resto = 11 - resto;
+
+                digito += resto.ToString();
+
+                return SemMascara.EndsWith(digito);
+            }
+        }
+        public  bool ValidaCPF(string cpf)
+        {
+            if (cpf == null || cpf == string.Empty)
+            {
+                return false;
+            }
+
+            if (cpf.Substring(0, 3) == "999" && cpf.Length == 11)
+            {
+                return true;
+            }
+
+            int[] multiplicador1 = new int[9] { 10, 9, 8, 7, 6, 5, 4, 3, 2 };
+            int[] multiplicador2 = new int[10] { 11, 10, 9, 8, 7, 6, 5, 4, 3, 2 };
+            string tempCpf;
+            string digito;
+            int soma;
+            int resto;
+            cpf = cpf.Trim();
+            cpf = cpf.Replace(".", "").Replace("-", "");
+            while (cpf.Length < 11)
+            {
+                cpf = "0" + cpf;
+            }
+            if (cpf.Substring(1,3) == "999" && cpf.Length == 11)
+            {
+                return true;
+            }
+            if (cpf.Length != 11)
+                return false;
+            tempCpf = cpf.Substring(0, 9);
+            soma = 0;
+
+            if (cpf.Equals("00000000000") ||
+                cpf.Equals("11111111111") ||
+                cpf.Equals("22222222222") ||
+                cpf.Equals("33333333333") ||
+                cpf.Equals("44444444444") ||
+                cpf.Equals("55555555555") ||
+                cpf.Equals("66666666666") ||
+                cpf.Equals("77777777777") ||
+                cpf.Equals("88888888888") ||
+                cpf.Equals("99999999999")
+                )
+                return false;
+
+            for (int i = 0; i < 9; i++)
+                soma += int.Parse(tempCpf[i].ToString()) * multiplicador1[i];
+            resto = soma % 11;
+            if (resto < 2)
+                resto = 0;
+            else
+                resto = 11 - resto;
+            digito = resto.ToString();
+            tempCpf += digito;
+            soma = 0;
+            for (int i = 0; i < 10; i++)
+                soma += int.Parse(tempCpf[i].ToString()) * multiplicador2[i];
+            resto = soma % 11;
+            if (resto < 2)
+                resto = 0;
+            else
+                resto = 11 - resto;
+            digito += resto.ToString();
+            return cpf.EndsWith(digito);
+        }
+        public CNPJValidador(string valor)
+        {
+            if (valor != null)
+                valor = Regex.Replace(valor, "[^\\d]+", string.Empty, RegexOptions.Compiled);
+
+            SemMascara = valor;
+        }
+        public static CNPJValidador Parse(string cnpj)
+        {
+            return new CNPJValidador (cnpj);
+        }
+        public static bool TryParse(string cnpj, out CNPJValidador obj)
+        {
+            obj = Parse(cnpj);
+            return obj.Valido;
+        }
+    }
+}
+

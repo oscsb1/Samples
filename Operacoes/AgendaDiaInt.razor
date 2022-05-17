@@ -1,0 +1,371 @@
+﻿
+@using InCorpApp.Pages.Componentes
+@using InCorpApp.Models
+@using InCorpApp.Constantes
+@using Blazorise.Components
+@using InCorpApp.Pages.StudioPages.Cadastro
+@inject IAuthorizationService authorizationService
+
+@inherits AgendaDoDiaIntBase
+
+@if (ShowProntuario)
+{
+    <Prontuarios AlunoId="@AlunoIdProntuario" OnVoltar="@OnVolarProntuario"></Prontuarios>
+}
+else
+{
+    @if (ShowReagendar)
+    {
+        <AgendaGeral Reagendar="true" OnReagendar="@OnRetornoReagendar" Studio="@Studio" Studios="@Studios"></AgendaGeral>
+    }
+    else
+    {
+        @if (ShowProgramacaoAulaHist)
+        {
+            <ProgAulaHist OnCancel="@CloseHist" ProgramacaoAula="@SelectedProgramacaoAula" />
+        }
+        else
+        {
+            @if (ShowIncluiProgramacaoAula)
+            {
+                <IncluirProgramacaoAula TipoAula="@TipoAula" StudioSel="@Studio" Dia="@Dia" OnCancel="@OnCancelAulaDet" OnOk="@OnOkIncAula" />
+            }
+            else
+            {
+                @if (!ShowProgramacaoAula && !ShowAulaAgendaEdit)
+                {
+                    <SFContextForm>
+                        <SFHeaderContextForm>
+                        </SFHeaderContextForm>
+                        <SFBodyContextForm>
+                            @if (Studios != null)
+                            {
+                                @if (Studios.Count > 1)
+                                {
+                                    <Field Horizontal="true" Class="myfieldgroup" Style="margin-left:0px">
+
+                                        <FieldBody Class="myfieldbodytext" ColumnSize="@XLargeTextColumnSize">
+                                            <SelectList Data="@Studios" TextField="@((item) => item.Nome)" Class="myselect"
+                                                        ValueField="@((item) => item.Id)" TItem="Studio" TValue="int"
+                                                        SelectedValue="@Studio.Id" SelectedValueChanged="@MyListStudioValueChangedHandler" />
+                                        </FieldBody>
+                                    </Field>
+                                }
+                            }
+                        </SFBodyContextForm>
+                    </SFContextForm>
+                    <SFContextForm Titulo="@TituloContexto">
+                        <SFHeaderContextForm>
+                        </SFHeaderContextForm>
+                        <SFBodyContextForm>
+                            <div class="sftollbar">
+                                <Buttons>
+                                    <SFDateTimeEdit Class="myfielddatetoolbar" @bind-Date="@Dia" TValue="DateTime" AfterChanged="@OnAfterChangeDate" />
+                                    <Button Class="btn-outline-primary mybtshrink" @onclick="@PesquisarClick" Loading="@Isloading" id="btpes025">
+                                        <Icon Class="fa fa-search" Margin="Margin.Is1.FromLeft" />
+                                    </Button>
+                                    <Button Class="btn-outline-primary mybtshrink" @onclick="@DiaAnteriorClick" id="btant025"><Icon Class="fa fa-step-backward" Margin="Margin.Is1.FromLeft" /></Button>
+                                    <Button Class="btn-outline-primary mybtshrink" @onclick="@ProximoDiaClick" id="btdep025"><Icon Class="fa fa-step-forward" Margin="Margin.Is2.FromRight" /></Button>
+                                    @if (ProfessorId == 0)
+                                    {
+                                        <Button Class="btn-outline-primary mybtshrink" Style="width: 180px; padding-left: 3px;" Clicked="@OnIncluirAulaAvulsaClick" id="btavu180" Margin="Margin.Is1.FromLeft">
+                                            <Icon Class="fa fa-plus" />
+                                            Agendar aula avulsa
+                                        </Button>
+                                        <Button Class="btn-outline-primary mybtshrink"  Style="width: 180px; padding-left: 3px;" Clicked="@OnIncluirAulaTesteClick" id="bttst180">
+                                            <Icon Class="fa fa-flask" />
+                                            Agendar aula exp
+                                        </Button>
+                                        <Button Class="btn-outline-primary mybtshrink"  Style="width: 180px; padding-left: 3px;" Clicked="@OnAgendaPacoteAulaClick" Margin="Margin.Is1.FromRight" id="btpct180">
+                                            <Icon Class="fa fa-cart-arrow-down" Margin="Margin.Is1.FromRight" />
+                                            Agendar aula pacote
+                                        </Button>
+                                        <Button Class="btn-outline-primary mybtshrink"  Style="width: 180px; padding-left: 3px;"  Clicked="@OnReagendar" Margin="Margin.Is1.FromRight" id="btpct180">
+                                            <Icon Class="fa fa-calendar" Margin="Margin.Is1.FromRight" />
+                                            Agendar reposição
+                                        </Button>
+                                    }
+                                </Buttons>
+                            </div>
+                            @if (Resultado.ErrMsg != string.Empty)
+                            {
+                                <p></p>
+                                <ErrMsg Result="@Resultado" />
+                                <p></p>
+                            }
+
+                            @if (StudioConfig != null && StudioConfig.ModeloAgenda == 2)
+                            {
+                                <img id="editaula" src="/img/editaula.png" style="display:none;">
+                                <img id="historicoaula" src="/img/historicoaula.png" style="display:none;">
+                                <img id="alunoprontuario" src="/img/alunoprontuario.png" style="display:none;">
+
+                                @if (ColunasProfessor != null && ColunasProfessor.Count > 0)
+                                {
+                                    <div class="table-responsive-xl mytableresp" id="tabler" onscroll="scrolltb('tabler')">
+                                        <Table Bordered="true" Hoverable="false" Responsive="true" Narrow="true" Class="table-sm mytableagenda">
+                                            <TableHeader>
+                                                <TableRow Class="rowhdragenda">
+                                                    <TableHeaderCell Class="colhdragendahora fixedcolhdr">Hora</TableHeaderCell>
+                                                    @foreach (var p in ColunasProfessor)
+                                                    {
+                                                        if (@ProfessorSel != null && @ProfessorSel.Id == p.Professor.Id)
+                                                        {
+                                                            <TableHeaderCell Class="colhdragenda fixedcolhdr2" Style="background-color: #4e226c; color:white">
+                                                                @p.Professor.Nome
+                                                                <Button Class="btn-outline-primary"  Style="width:18px;height:18px;padding:0px;margin:0px"  Clicked="@(() => OnShowAgendaProfessorClick(p.Professor.Id))" >
+                                                                    <Icon Class="fa fa fa-calendar" Style="padding:0px;margin:0px"   />
+                                                                </Button>
+                                                            </TableHeaderCell>
+                                                        }
+                                                        else
+                                                        {
+                                                            <TableHeaderCell Class="colhdragenda fixedcolhdr2"  Style="background-color: whitesmoke; color:black">
+                                                                @p.Professor.Nome
+                                                                <Button Class="btn-outline-primary"  Style="width:18px;height:18px;padding:0px;margin:0px" Clicked="@(() => OnShowAgendaProfessorClick(p.Professor.Id))">
+                                                                    <Icon Class="fa fa fa-calendar" Style="padding:0px;margin:0px"  />
+                                                                </Button>
+                                                            </TableHeaderCell>
+                                                        }
+                                                    }
+                                                </TableRow>
+                                                @if (@ProfessorSel != null)
+                                                {
+                                                    <TableRow Class="rowhdragenda">
+                                                        <TableHeaderCell Class="colhdragendahora fixedcolhdr3">
+                                                            <Button Class="btn-outline-primary"   Style="width:18px;height:18px;padding:0px;margin:0px" @onclick="@SemanaAnteriorClick" ><Icon Class="fa fa-step-backward"  Style="padding:0px;margin:0px" /></Button>
+                                                            <Button Class="btn-outline-primary"   Style="width:18px;height:18px;padding:0px;margin:0px" @onclick="@ProximoSemanaClick" ><Icon Class="fa fa-step-forward"  Style="padding:0px;margin:0px" /></Button>
+                                                        </TableHeaderCell>
+                                                        @foreach (var p in ColunasProfessor)
+                                                        {
+                                                            if (p.Professor.Id == ProfessorSel.Id)
+                                                            {
+                                                                foreach (var diap in p.DiasProfessor)
+                                                                {
+                                                                <TableHeaderCell Class="colhdragenda sticky-header-filter" Style="background-color: #4e226c; color:white" >@diap.DiaNome</TableHeaderCell>
+                                                                }
+                                                                break;
+                                                            }
+                                                        }
+                                                    </TableRow>
+                                                }
+                                            </TableHeader>
+                                            <TableBody>
+                                                <TableRow>
+                                                    <TableRowCell Class="colagendahora fixedcol" id="horacell">
+                                                        <canvas id="hora" width=40 height=@(FinalDia - InicioDia) style="margin:0px;padding:0px;"></canvas>
+                                                    </TableRowCell>
+
+                                                    @foreach (var p in ColunasProfessor)
+                                                    {
+                                                        if (ProfessorSel != null && p.Professor.Id != ProfessorSel.Id)
+                                                        {
+                                                            continue;
+                                                        }
+                                                        if (ProfessorSel == null)
+                                                        {
+                                                            <TableRowCell Class="colagenda" id="@("p" + @p.Professor.Id.ToString() + @p.DiasProfessor[0].DiaOfTheWeek.ToString())">
+                                                                <canvas id="@p.DiasProfessor[0].Id" height=@(FinalDia - InicioDia) width=150 @onmouseup="@OnMouseUpAgenda" @onclick="@(() => OnClickAgenda(p.DiasProfessor[0]))" style="margin:0px;padding:0px;"></canvas>
+                                                            </TableRowCell>
+                                                        }
+                                                        else
+                                                        {
+                                                            @foreach (var diap in p.DiasProfessor)
+                                                            {
+                                                                <TableRowCell Class="colagenda" id="@("p" + @p.Professor.Id.ToString() + @diap.DiaOfTheWeek.ToString())">
+                                                                    <canvas id="@diap.Id" height=@(FinalDia - InicioDia) width=150 @onmouseup="@OnMouseUpAgenda" @onclick="@(() => OnClickAgenda(diap))" style="margin:0px;padding:0px;"></canvas>
+                                                                </TableRowCell>
+                                                            }
+                                                        }
+                                                    }
+                                                </TableRow>
+                                            </TableBody>
+                                        </Table>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <!--
+                                                                @if (Linhas != null && Linhas.Count > 0)
+                                                                {
+                                                                    <div class="table-responsive-xl mytableresp" id="tabler01" onscroll="scrolltb('tabler01')">
+                                                                        <Table Bordered="true" Hoverable="true" Responsive="true" Narrow="true" Class="table-sm mytableagenda">
+                                                                            <TableHeader Class="mytablehdragenda">
+                                                                                <TableRow Class="mytablehdrrowagenda">
+                                                                                    <TableHeaderCell Class="mytablehdrtituloagenda sticky-header " Style="max-width:50px;background:whitesmoke">Hora</TableHeaderCell>
+                                                                                    @foreach (var p in Professores)
+                                                                                    {
+                                                                                        <TableHeaderCell Class="mytablehdrtituloagendaprof sticky-header" Style="max-width:100px;background:whitesmoke">@p.Nome</TableHeaderCell>
+                                                                                    }
+                                                                                </TableRow>
+                                                                            </TableHeader>
+                                                                            <TableBody Class="mytablebodyagenda">
+                                                                                @foreach (var l in Linhas)
+                                                                                {
+                                                                                    <TableRow Class="mytablebodyrowtituloagenda">
+                                                                                        <TableRowCell Class="mytablebodyrowcellagenda">@l.HoraInicioV</TableRowCell>
+                                                                                        @foreach (var p in l.Aulas)
+                                                                                        {
+                                                                                            if (p.TemAgenda)
+                                                                                            {
+                                                                                                <TableRowCell Class="myrowcellprofagenda" Style=@("background-color:" + @StudioConfig.CorAgendaProfessor)>
+                                                                                                    @if (p.ProfessorAulas.Count > 0)
+                                                                                                    {
+                                                                                                        <div class="table-responsive-sm mytablerespaula">
+                                                                                                            <Table Bordered="true" Hoverable="true" Responsive="true" Narrow="true" Class="mytableagendaaula">
+                                                                                                                <TableBody Class="mytablebodyagendaaula">
+                                                                                                                    @foreach (var a in p.ProfessorAulas)
+                                                                                                                    {
+                                                                                                                        <TableRow>
+                                                                                                                            <TableRowCell Class="mytablebodyrowcellagendaaula" Style=@("cursor:pointer;background-color:" + @a.StatusCor)>
+                                                                                                                                @a.NomeAgendaDia
+                                                                                                                                @if (a.StatusFinanceiro == StatusParcela.Conciliado)
+                                                                                                                                {
+                                                                                                                                    <Button Class="mybtaula"><Icon Class="fa fa-check-circle" Style="color:#4e226c" /></Button>
+                                                                                                                                }
+                                                                                                                                else
+                                                                                                                                {
+                                                                                                                                    @if (a.StatusFinanceiro == StatusParcela.Pago)
+                                                                                                                                    {
+                                                                                                                                        <Button Class="mybtaula"><Icon Class="fa fa-check" Style="color:#4e226c" /></Button>
+                                                                                                                                    }
+                                                                                                                                }
+                                                                                                                                @if (ProfessorId == 0)
+                                                                                                                                {
+                                                                                                                                    <Button Class="mybtaula" Clicked="@(() => OnClickAulaHist(a))"><Icon Class="a fa-list-alt" Style="color:#4e226c" /></Button>
+                                                                                                                                }
+                                                                                                                                @if (ProfessorId == 0 || (ProfessorId != 0 && ProfessorId == a.ProfessorId))
+                                                                                                                                {
+                                                                                                                                    <Button Class="mybtaula" Clicked="@(() => OnClickAula(a))"><Icon Class="fa fa-cog" Style="color:#4e226c" /></Button>
+                                                                                                                                }
+                                                                                                                                <Button Class="mybtaula" Clicked="@(() => OnClickProntuario(a.AlunoId))"><Icon Class="fa fa-list" Style="color:#4e226c" /></Button>
+                                                                                                                            </TableRowCell>
+                                                                                                                        </TableRow>
+                                                                                                                    }
+                                                                                                                </TableBody>
+                                                                                                            </Table>
+                                                                                                        </div>
+                                                                                                    }
+                                                                                                    @if (p.AlunosProfessor.Count > 0)
+                                                                                                    {
+                                                                                                        <div class="table-responsive-sm mytablerespaula">
+                                                                                                            <Table Bordered="true" Hoverable="true" Responsive="true" Narrow="true" Class="mytableagendaaula">
+                                                                                                                <TableBody Class="mytablebodyagendaaula">
+                                                                                                                    @foreach (var a in p.AlunosProfessor)
+                                                                                                                    {
+                                                                                                                        <TableRow>
+                                                                                                                            <TableRowCell Class="mytablebodyrowcellagendaaula" Style=@("background-color:" + @StudioConfig.CorAlunoHorarioFixo)>
+                                                                                                                                @a.Aluno.Nome
+                                                                                                                                <Button Class="mybtaula" Clicked="@(() => OnClickProntuario(a.AlunoId))"><Icon Class="fa fa-list" Style="color:#4e226c" /></Button>
+                                                                                                                            </TableRowCell>
+                                                                                                                        </TableRow>
+                                                                                                                    }
+                                                                                                                </TableBody>
+                                                                                                            </Table>
+                                                                                                        </div>
+                                                                                                    }
+                                                                                                </TableRowCell>
+                                                                                            }
+                                                                                            else
+                                                                                            {
+                                                                                                <TableRowCell Class="myrowcellprofsemagenda">
+                                                                                                    @if (p.ProfessorAulas.Count > 0)
+                                                                                                    {
+                                                                                                        <div class="table-responsive-sm mytablerespaula">
+                                                                                                            <Table Bordered="true" Hoverable="true" Responsive="true" Narrow="true" Class="mytableagendaaula">
+                                                                                                                <TableBody Class="mytablebodyagendaaula">
+                                                                                                                    @foreach (var a in p.ProfessorAulas)
+                                                                                                                    {
+                                                                                                                        <TableRow>
+                                                                                                                            <TableRowCell Class="mytablebodyrowcellagendaaula" Style=@("cursor:pointer;background-color:" + @a.StatusCor)>
+                                                                                                                                @a.NomeAgendaDia
+                                                                                                                                @if (a.StatusFinanceiro == StatusParcela.Conciliado)
+                                                                                                                                {
+                                                                                                                                    <Button Class="mybtaula"><Icon Class="fa fa-check-circle" Style="color:#4e226c" /></Button>
+                                                                                                                                }
+                                                                                                                                else
+                                                                                                                                {
+                                                                                                                                    @if (a.StatusFinanceiro == StatusParcela.Pago)
+                                                                                                                                    {
+                                                                                                                                        <Button Class="mybtaula"><Icon Class="fa fa-check" Style="color:#4e226c" /></Button>
+                                                                                                                                    }
+                                                                                                                                }
+                                                                                                                                @if (ProfessorId == 0)
+                                                                                                                                {
+                                                                                                                                    <Button Class="mybtaula" Clicked="@(() => OnClickAulaHist(a))"><Icon Class="a fa-list-alt" Style="color:#4e226c" /></Button>
+                                                                                                                                }
+                                                                                                                                @if (ProfessorId == 0 || (ProfessorId != 0 && ProfessorId == a.ProfessorId))
+                                                                                                                                {
+                                                                                                                                    <Button Class="mybtaula" Clicked="@(() => OnClickAula(a))"><Icon Class="fa fa-cog" Style="color:#4e226c" /></Button>
+                                                                                                                                }
+                                                                                                                                <Button Class="mybtaula" Clicked="@(() => OnClickProntuario(a.AlunoId))"><Icon Class="fa fa-list" Style="color:#4e226c" /></Button>
+                                                                                                                            </TableRowCell>
+                                                                                                                        </TableRow>
+                                                                                                                    }
+                                                                                                                </TableBody>
+                                                                                                            </Table>
+                                                                                                        </div>
+                                                                                                    }
+
+                                                                                                    @if (p.AlunosProfessor.Count > 0)
+                                                                                                    {
+                                                                                                        <div class="table-responsive-sm mytablerespaula">
+                                                                                                            <Table Bordered="true" Hoverable="true" Responsive="true" Narrow="true" Class="mytableagendaaula">
+                                                                                                                <TableBody Class="mytablebodyagendaaula">
+                                                                                                                    @foreach (var a in p.AlunosProfessor)
+                                                                                                                    {
+                                                                                                                        <TableRow>
+                                                                                                                            <TableRowCell Class="mytablebodyrowcellagendaaula" Style=@("background-color:" + @StudioConfig.CorAlunoHorarioFixo)>
+                                                                                                                                @a.Aluno.Nome
+                                                                                                                                <Button Class="mybtaula" Clicked="@(() => OnClickProntuario(a.AlunoId))"><Icon Class="fa fa-list" Style="color:#4e226c" /></Button>
+                                                                                                                            </TableRowCell>
+                                                                                                                        </TableRow>
+                                                                                                                    }
+                                                                                                                </TableBody>
+                                                                                                            </Table>
+                                                                                                        </div>
+                                                                                                    }
+
+                                                                                                </TableRowCell>
+                                                                                            }
+                                                                                        }
+                                                                                    </TableRow>
+                                                                                }
+
+                                                                            </TableBody>
+                                                                        </Table>
+                                                                    </div>
+
+                                                                }
+                                -->
+                            }
+                        </SFBodyContextForm>
+                    </SFContextForm>
+                }
+                else
+                {
+                    if (ShowProgramacaoAula)
+                    {
+                        if (SelectedProgramacaoAula != null && Professores != null)
+                        {
+                            <ProgramacaoAulaDetail ProfessorId="@ProfessorId" Item="@SelectedProgramacaoAula" Professores="@Professores" OnCancel="@OnCancelAulaDet" OnOk="@OnOkAulaDet">
+                            </ProgramacaoAulaDetail>
+                        }
+                    }
+                }
+                if (ShowAulaAgendaEdit)
+                {
+                    if (SelectedAulaAgenda != null && Professores != null)
+                    {
+                        <AulaAgendaOperacao Item="@SelectedAulaAgenda" Professores="@Professores" Dia="@Dia" Studio="Studio" OnCancel="@OnCancelAulaAgendaDet" OnOk="@OnOkAulaAgenda">
+                        </AulaAgendaOperacao>
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+

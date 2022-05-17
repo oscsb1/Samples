@@ -1,0 +1,94 @@
+﻿@page  "/StudioPages/Operacoes/Programacao"
+@using InCorpApp.Pages.Componentes
+@using InCorpApp.Constantes
+@using InCorpApp.Models
+@using InCorpApp.Pages.BOComponentes
+@using Blazorise.Components
+
+
+@layout StudioLayout
+@inherits ProgramacaoBase
+
+
+<AuthorizeView Roles="@Constante.RoleAdmUser()" Context="aaa">
+
+    <Authorized>
+
+        <SFFrameExterno>
+            <ContentExterno>
+
+
+                <SFFrame>
+                    <Content>
+                        @if (Studios != null)
+                        {
+                            <EditForm Model="@StudioSel" OnValidSubmit="@HandleValidSubmit">
+                                <SFContextForm Titulo="@TituloContexto">
+                                    <SFHeaderContextForm>
+
+                                    </SFHeaderContextForm>
+                                    <SFBodyContextForm>
+                                        <DataAnnotationsValidator />
+                                        @if (Studios.Count > 1)
+                                        {
+                                            <Field Horizontal="true" Class="myfieldgroup">
+                                                <FieldLabel Class="myfieldlabel" ColumnSize="@LabelColumnSize">Studio</FieldLabel>
+                                                <FieldBody Class="myfieldbodytext" ColumnSize="@TextColumnSize">
+                                                    <SelectList Data="@Studios" TextField="@((item) => item.Nome)" Class="myselect" TValue="int"
+                                                                ValueField="@((item) => item.Id)" TItem="Studio"
+                                                                SelectedValue="@StudioId" SelectedValueChanged="@MyListStudioValueChangedHandler" />
+                                                </FieldBody>
+                                            </Field>
+                                        }
+
+                                        <div>
+                                            <Field Horizontal="true" Class="myfieldgroup">
+                                                <FieldLabel Class="myfieldlabel" ColumnSize="@LabelColumnSize">Data início</FieldLabel> <FieldBody Class="myfieldbodytext" ColumnSize="@TextColumnSize">
+                                                    <SFDateTimeEdit ChangeTextOnKeyPress="false" Class="myfielddate" @bind-Date="@DataInicio" Disabled="false" Size="Size.Small"  TValue="DateTime"></SFDateTimeEdit>
+                                                </FieldBody>
+                                            </Field>
+                                            <Field Horizontal="true" Class="myfieldgroup">
+                                                <FieldLabel Class="myfieldlabel" ColumnSize="@LabelColumnSize">Data final</FieldLabel> <FieldBody Class="myfieldbodytext" ColumnSize="@TextColumnSize">
+                                                    <SFDateTimeEdit ChangeTextOnKeyPress="false" Class="myfielddate" @bind-Date="@DataFim" Disabled="false" Size="Size.Small"  TValue="DateTime"></SFDateTimeEdit>
+                                                </FieldBody>
+                                            </Field>
+                                        </div>
+                                    </SFBodyContextForm>
+                                </SFContextForm>
+
+                                <ErrMsg ErroMessage="@Resultado.ErrMsg">
+                                </ErrMsg>
+
+                                <div>
+                                    <SaveCancelToolbar CancelClick="@OnCancel" SaveCaption="Processar" />
+                                </div>
+
+                            </EditForm>
+                        }
+                        else
+                        {
+                            <SFSpinner IsLoading="@Isloading" />
+
+                        }
+
+                    </Content>
+                </SFFrame>
+
+
+            </ContentExterno>
+        </SFFrameExterno>
+
+
+
+    </Authorized>
+
+    <NotAuthorized>
+        <NaoAutorizado />
+    </NotAuthorized>
+
+</AuthorizeView>
+
+
+
+
+

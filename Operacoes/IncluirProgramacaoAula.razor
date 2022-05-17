@@ -1,0 +1,140 @@
+﻿
+@using InCorpApp.Pages.Componentes
+@using InCorpApp.Models
+@using InCorpApp.Constantes
+@using Blazorise.Components
+
+
+
+@inject IAuthorizationService authorizationService
+@layout StudioLayout
+
+@inherits IncluirProgramacaoAulaBase
+
+@if (Item != null)
+{
+
+    <Modal @ref="@Modal" Closing="@OnModalClosing">
+
+        <ModalContent Centered="true" Size="ModalSize.Default">
+            <ModalHeader Class="myhdrmodal">
+                <ModalTitle Class="mytitlemodal" Style="text-align:center">@HdrTitulo</ModalTitle>
+            </ModalHeader>
+            <ModalBody>
+                <div>
+                    <div id="autocomplete" style="font-size:10px;">
+                        <Field Horizontal="true" Class="myfieldgroup">
+                            <FieldLabel Class="myfieldlabel" ColumnSize="@LargeLabelColumnSize">Aluno</FieldLabel>
+                            <FieldBody Class="myfieldbodytext" ColumnSize="@LargeTextColumnSize">
+                                <Autocomplete Class="myautocomplete" Data="@Alunos" Size="Size.ExtraSmall" @ref="@AutoC01" MinLength="3" TValue="int" TItem="Aluno"
+                                              TextField="@((item) => item.Nome)"
+                                              ValueField="@((item) => item.Id)"
+                                              Filter="AutocompleteFilter.Contains"
+                                              SelectedValue="@SelectedRelacionamento"
+                                              SelectedValueChanged="@RelacionamentoSearchHandler"
+                                              Placeholder="aluno..." />
+                            </FieldBody>
+                        </Field>
+                    </div>
+                    @if (Studios.Count > 1)
+                    {
+                        <Field Horizontal="true" Class="myfieldgroup">
+                            <FieldLabel Class="myfieldlabel" ColumnSize="@LargeLabelColumnSize">Studio</FieldLabel>
+                            <FieldBody Class="myfieldbodytext" ColumnSize="@LargeTextColumnSize">
+                                <SelectList Data="@Studios" TextField="@((item) => item.Nome)" Class="myselect"
+                                            ValueField="@((item) => item.Id)" TItem="Studio" TValue="int"
+                                            SelectedValue="@Item.StudioId" SelectedValueChanged="@MyListStudioValueChangedHandler" />
+                            </FieldBody>
+                        </Field>
+                    }
+                    @if (TipoAula == TipoAula.Pacote)
+                    {
+                        <Field Horizontal="true" Class="myfieldgroup">
+                            <FieldLabel Class="myfieldlabel" ColumnSize="@LargeLabelColumnSize">Aula</FieldLabel>
+                            <FieldBody Class="myfieldbodytext" ColumnSize="@LargeTextColumnSize">
+                                <SelectList Data="@AlunoPlanoAulas" TextField="@((item) => item.NomeAulaEsp)" Class="myselect"
+                                            ValueField="@((item) => item.Id)" TItem="AlunoPlanoAula" TValue="int"
+                                            SelectedValue="@Item.AlunoPlanoAulaId" SelectedValueChanged="@MyListAulaPlanoValueChangedHandler" />
+                            </FieldBody>
+                        </Field>
+                    }
+                    else
+                    {
+                        @if (Aulas != null)
+                        {
+                            <Field Horizontal="true" Class="myfieldgroup">
+                                <FieldLabel Class="myfieldlabel" ColumnSize="@LargeLabelColumnSize">Aula</FieldLabel>
+                                <FieldBody Class="myfieldbodytext" ColumnSize="@LargeTextColumnSize">
+                                    <SelectList Data="@Aulas" TextField="@((item) => item.Nome)" Class="myselect"
+                                                ValueField="@((item) => item.Id)" TItem="Aula" TValue="int"
+                                                SelectedValue="@Item.AulaId" SelectedValueChanged="@MyListAulaValueChangedHandler" />
+                                </FieldBody>
+                            </Field>
+                        }
+                    }
+                    <Field Horizontal="true" Class="myfieldgroup">
+                        <FieldLabel Class="myfieldlabel" ColumnSize="@LargeLabelColumnSize">Data</FieldLabel> <FieldBody Class="myfieldbodytext" ColumnSize="@LargeTextColumnSize">
+                            <SFDateTimeEdit ChangeTextOnKeyPress="false" Class="myfielddate" @bind-Date="@Item.DataProgramada" Size="Size.Small" TValue="DateTime"></SFDateTimeEdit>
+                        </FieldBody>
+                    </Field>
+                    <Field Horizontal="true" Class="myfieldgroup">
+                        <FieldLabel Class="myfieldlabel" ColumnSize="@LargeLabelColumnSize">Início</FieldLabel> <FieldBody Class="myfieldbodytext" ColumnSize="@LargeTextColumnSize">
+                            <TextEdit ChangeTextOnKeyPress="false" Class="myfieldnumeric" @bind-Text="@ValorInicio" Size="Size.Small" @onblur="@(() => ValorInicioEvent())" ></TextEdit>
+                        </FieldBody>
+                    </Field>
+                    <Field Horizontal="true" Class="myfieldgroup">
+                        <FieldLabel Class="myfieldlabel" ColumnSize="@LargeLabelColumnSize">Fim</FieldLabel> <FieldBody Class="myfieldbodytext" ColumnSize="@LargeTextColumnSize">
+                            <TextEdit ChangeTextOnKeyPress="false" Class="myfieldnumeric" @bind-Text="@Item.HoraFimV" Size="Size.Small" Disabled="true"></TextEdit>
+                        </FieldBody>
+                    </Field>
+                    <Field Horizontal="true" Class="myfieldgroup">
+                        <FieldLabel Class="myfieldlabel" ColumnSize="@LargeLabelColumnSize">Professor</FieldLabel>
+                        <FieldBody Class="myfieldbodytext" ColumnSize="@LargeTextColumnSize">
+                            <SelectList Data="@Professores" TextField="@((item) => item.Nome)" Class="myselect"
+                                        ValueField="@((item) => item.Id)" TItem="Professor" TValue="int"
+                                        SelectedValue="@Item.ProfessorId" SelectedValueChanged="@MyListProfessorValueChangedHandler" />
+                        </FieldBody>
+                    </Field>
+                    @if (Item.TipoAula == TipoAula.Avulsa)
+                    {
+                        <AuthorizeView Roles="@Constante.RoleAdm()" Context="xx">
+                            <Authorized>
+                                <Field Horizontal="true" Class="myfieldgroup">
+                                    <FieldLabel Class="myfieldlabel" ColumnSize="@LargeLabelColumnSize">Valor aula</FieldLabel> <FieldBody Class="myfieldbodytext" ColumnSize="@TextColumnSize">
+                                        <SFNumEdit Class="myfieldnumeric" @bind-Number="@Item.Valor" TValue="double" Size="Size.Small" Disabled="false" Mask="C2"></SFNumEdit>
+                                    </FieldBody>
+                                </Field>
+                            </Authorized>
+                            <NotAuthorized>
+                                <Field Horizontal="true" Class="myfieldgroup">
+                                    <FieldLabel Class="myfieldlabel" ColumnSize="@LargeLabelColumnSize">Valor aula</FieldLabel> <FieldBody Class="myfieldbodytext" ColumnSize="@TextColumnSize">
+                                        <SFNumEdit Class="myfieldnumeric" @bind-Number="@Item.Valor" TValue="double" Size="Size.Small" Disabled="true" Mask="C2"></SFNumEdit>
+                                    </FieldBody>
+                                </Field>
+                            </NotAuthorized>
+                        </AuthorizeView>
+                        <Field Horizontal="true" Class="myfieldgroup">
+                            <FieldLabel Class="myfieldlabel" ColumnSize="@LargeLabelColumnSize">Pago?</FieldLabel> <FieldBody Class="myfieldbodytext" ColumnSize="@TextColumnSize">
+                                <Check TValue="bool" Style="font-size:12px;" @bind-Checked="@Item.Pago"></Check>
+                            </FieldBody>
+                        </Field>
+                    }
+                    <Field Horizontal="true" Class="myfieldgroup">
+                        <FieldLabel Class="myfieldlabel" ColumnSize="@LargeLabelColumnSize">OBS</FieldLabel> <FieldBody Class="myfieldbodytext" ColumnSize="@LargeTextColumnSize">
+                            <MemoEdit ChangeTextOnKeyPress="false" Class="myfieldbodytext" @bind-Text="@Item.OBS" Size="Size.Small" Rows="3"></MemoEdit>
+                        </FieldBody>
+                    </Field>
+                </div>
+                <ErrMsg Result="@Resultado" />
+                <SaveCancelToolbar CancelClick="@Cancel" SaveClick="@Ok" />
+
+            </ModalBody>
+            <ModalFooter>
+            </ModalFooter>
+        </ModalContent>
+    </Modal>
+
+}
+
+
+

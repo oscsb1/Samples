@@ -1,0 +1,215 @@
+﻿
+@using InCorpApp.Pages.Componentes
+@using InCorpApp.Models
+
+@using System.Globalization
+@using Blazorise.Components
+@using InCorpApp.Constantes
+
+
+@inject IAuthorizationService authorizationService
+@layout StudioLayout
+
+@inherits ProgramacaoAulaDetailBase
+
+@if (Item != null && ProgramacaoAulaTemp != null)
+{
+
+    <Modal @ref="@Modal" Closing="@OnModalClosing">
+
+        <ModalContent Centered="true" Size="ModalSize.Default">
+            <ModalHeader Class="myhdrmodal">
+                <ModalTitle Class="mytitlemodal" Style="text-align:center">@HdrTitulo</ModalTitle>
+            </ModalHeader>
+            <ModalBody>
+                @if (ShowConfimaProfDif)
+                {
+                    <SFConfirmacao HdrTitulo="Registro de aula" Saving="@Processando" BodyTitulo="@("Confirma aula dada pelo professor " + ProgramacaoAulaTemp.ProfessorRealNome + "(a) ?")" OnCancel="@OnCancelRegistro" OnOk="@OnConfirmaRegistro" />
+
+                }
+                else
+                {
+                    @if (Item.Status != StatusAula.Executada && Item.Status != StatusAula.Cancelada && Item.Status != StatusAula.Reserva && Item.Status != StatusAula.FaltaSemReagendamento)
+                    {
+                        if (Item.DataProgramadaCompleta < Constante.Now && (ProfessorId == 0 || (ProfessorId != 0 && (Item.Status == StatusAula.Agendada || Item.Status == StatusAula.Programada || Item.Status == StatusAula.NaoProgramada))))
+                        {
+                            <Row>
+                                <Button Class="btn-outline-primary mybtauladet" Clicked="@RegistrarClick" Disabled="@DisableBts">Registrar presença</Button>
+                            </Row>
+                        }
+                        if (OperacaoAula != TipoOperacaoAula.RegistrarAulaExecutada)
+                        {
+
+                            if ((Item.Status == StatusAula.Agendada || Item.Status == StatusAula.Programada || Item.Status == StatusAula.ReAgendamento) && ProfessorId == 0)
+                            {
+                                <Row>
+                                    <Button Class="btn-outline-primary mybtauladet" Clicked="@ReagendarClick" Disabled="@DisableBts">Reagendar</Button>
+                                </Row>
+                            }
+                            if (((Item.Status == StatusAula.Agendada || Item.Status == StatusAula.Programada) && Item.TipoAula != TipoAula.Avulsa && Item.TipoAula != TipoAula.Teste && Item.TipoAula != TipoAula.Pacote) && ProfessorId == 0)
+                            {
+                                <Row>
+                                    <Button Class="btn-outline-primary mybtauladet" Clicked="@DesmarcarClick" Disabled="@DisableBts">Desmarcar aula</Button>
+                                </Row>
+                            }
+                            if (Item.Status == StatusAula.Agendada && Item.DataProgramadaCompleta < Constante.Now)
+                            {
+                                <Row>
+                                    <Button Class="btn-outline-primary mybtauladet" Clicked="@RegistrarFaltaClick" Disabled="@DisableBts">Registrar falta sem direito a reagendamento</Button>
+                                </Row>
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if ((Item.Status == StatusAula.Executada || Item.Status == StatusAula.FaltaSemReagendamento) && ProfessorId == 0)
+                        {
+                            <Row>
+                                <Button Class="btn-outline-primary mybtauladet" Clicked="@ReabrirClick" Disabled="@DisableBts">Reabrir aula</Button>
+                            </Row>
+                        }
+                    }
+                    if (OperacaoAula != TipoOperacaoAula.RegistrarAulaExecutada)
+                    {
+                        @if ((Item.TipoAula == TipoAula.Teste && Item.Status != StatusAula.Executada && Item.Status != StatusAula.Cancelada) && ProfessorId == 0)
+                        {
+                            <Row>
+                                <Button Class="btn-outline-primary mybtauladet" Clicked="@CancelarTesteClick" Disabled="@DisableBts">Cancelar</Button>
+                            </Row>
+                        }
+                        @if ((Item.TipoAula == TipoAula.Avulsa && Item.Status != StatusAula.Executada && Item.Status != StatusAula.Cancelada) && ProfessorId == 0)
+                        {
+                            <Row>
+                                <Button Class="btn-outline-primary mybtauladet" Clicked="@CancelarAvulsaClick" Disabled="@DisableBts">Cancelar</Button>
+                            </Row>
+                        }
+                        @if ((Item.TipoAula == TipoAula.Pacote && Item.Status != StatusAula.Executada && Item.Status != StatusAula.Cancelada && Item.Status != StatusAula.FaltaSemReagendamento))
+                        {
+                            <Row>
+                                <Button Class="btn-outline-primary mybtauladet" Clicked="@ExcluirPctClick" Disabled="@DisableBts">Excluir</Button>
+                            </Row>
+                        }
+                    }
+                    <p></p>
+                    <ErrMsg ErroMessage="@Resultado.ErrMsg">
+                    </ErrMsg>
+                    <p></p>
+                    <div>
+                        <Field Horizontal="true" Class="myfieldgroup">
+                            <FieldLabel Class="myfieldlabel" ColumnSize="@LargeLabelColumnSize">Aula</FieldLabel> <FieldBody Class="myfieldbodytext" ColumnSize="@LargeTextColumnSize">
+                                <TextEdit ChangeTextOnKeyPress="false" Class="myfieldbodytext" @bind-Text="@Item.Aula.Nome" Size="Size.Small" Disabled="true"></TextEdit>
+                            </FieldBody>
+                        </Field>
+                        <Field Horizontal="true" Class="myfieldgroup">
+                            <FieldLabel Class="myfieldlabel" ColumnSize="@LargeLabelColumnSize">Situação</FieldLabel> <FieldBody Class="myfieldbodytext" ColumnSize="@LargeTextColumnSize">
+                                <TextEdit ChangeTextOnKeyPress="false" Class="myfieldbodytext" @bind-Text="@Item.StatusNome" Size="Size.Small" Disabled="true"></TextEdit>
+                            </FieldBody>
+                        </Field>
+                        @if (OperacaoAula == TipoOperacaoAula.RegistrarAulaExecutada)
+                        {
+                            <Field Horizontal="true" Class="myfieldgroup">
+                                <FieldLabel Class="myfieldlabel" ColumnSize="@LargeLabelColumnSize">Data</FieldLabel> <FieldBody Class="myfieldbodytext" ColumnSize="TextColumnSize">
+                                    <TextEdit ChangeTextOnKeyPress="false" Class="myfieldbodytext" @bind-Text="@ProgramacaoAulaTemp.DataCompleta" Size="Size.Small" Disabled="true"></TextEdit>
+                                </FieldBody>
+                            </Field>
+                        }
+                        else
+                        {
+                            <Field Horizontal="true" Class="myfieldgroup">
+                                <FieldLabel Class="myfieldlabel" ColumnSize="@LargeLabelColumnSize">Data</FieldLabel> <FieldBody Class="myfieldbodytext" ColumnSize="@TextColumnSize">
+                                    <SFDateTimeEdit ChangeTextOnKeyPress="false" Class="myfielddate" @bind-Date="@ProgramacaoAulaTemp.DataProgramada" Disabled="@(!@DataDisp)" Size="Size.Small" TValue="DateTime"></SFDateTimeEdit>
+                                </FieldBody>
+                            </Field>
+                            <Field Horizontal="true" Class="myfieldgroup">
+                                <FieldLabel Class="myfieldlabel" ColumnSize="@LargeLabelColumnSize">Início</FieldLabel> <FieldBody Class="myfieldbodytext" ColumnSize="TextColumnSize">
+                                    <TextEdit ChangeTextOnKeyPress="false" Class="myfieldnumeric" @bind-Text="@ValorInicio" Size="Size.Small" @onblur="@(() => ValorInicioEvent())" Disabled="@(!@DataDisp)" ></TextEdit>
+                                </FieldBody>
+                            </Field>
+                            <Field Horizontal="true" Class="myfieldgroup">
+                                <FieldLabel Class="myfieldlabel" ColumnSize="@LargeLabelColumnSize">Fim</FieldLabel> <FieldBody Class="myfieldbodytext" ColumnSize="TextColumnSize">
+                                    <TextEdit ChangeTextOnKeyPress="false" Class="myfieldnumeric" @bind-Text="@ProgramacaoAulaTemp.HoraFimV" Size="Size.Small" Disabled="true"></TextEdit>
+                                </FieldBody>
+                            </Field>
+                        }
+
+                        @if (ProfessoresPossivel.Count > 1)
+                        {
+                            <Field Horizontal="true" Class="myfieldgroup">
+                                <FieldLabel Class="myfieldlabel" ColumnSize="@LargeLabelColumnSize">Agendado com</FieldLabel>
+
+                                <FieldBody Class="myfieldbodytext" ColumnSize="@TextColumnSize">
+                                    @if (ProfDisp)
+                                    {
+                                        <SelectList Data="@ProfessoresPossivel" TextField="@((item) => item.Nome)" Class="myselect"
+                                                    ValueField="@((item) => item.Id)" TValue="int" TItem="Professor"
+                                                    SelectedValue="@ProgramacaoAulaTemp.ProfessorId" SelectedValueChanged="@MyListProfessorValueChangedHandler" />
+
+                                    }
+                                    else
+                                    {
+                                        <TextEdit ChangeTextOnKeyPress="false" Class="myfieldbodytext" @bind-Text="@Item.ProfessorNome" Size="Size.Small" Disabled="true"></TextEdit>
+                                    }
+                                </FieldBody>
+                            </Field>
+                            if (ProgramacaoAulaTemp.Status == StatusAula.Executada)
+                            {
+                                <Field Horizontal="true" Class="myfieldgroup">
+                                    <FieldLabel Class="myfieldlabel" ColumnSize="@LargeLabelColumnSize">Dada por</FieldLabel>
+                                    <FieldBody Class="myfieldbodytext" ColumnSize="@TextColumnSize">
+                                        @if (Item.Status == StatusAula.Executada)
+                                        {
+                                            <TextEdit ChangeTextOnKeyPress="false" Class="myfieldbodytext" @bind-Text="@Item.ProfessorRealNome" Size="Size.Small" Disabled="true"></TextEdit>
+                                        }
+                                        else
+                                        {
+                                            <SelectList Data="@ProfessoresPossivel" TextField="@((item) => item.Nome)" Class="myselect"
+                                                        ValueField="@((item) => item.Id)" TItem="Professor" TValue="int"
+                                                        SelectedValue="@ProgramacaoAulaTemp.ProfessorRealId" SelectedValueChanged="@MyListProfessorRealValueChangedHandler" />
+                                        }
+                                    </FieldBody>
+                                </Field>
+                            }
+                        }
+                        @if (Item.TipoAula == TipoAula.Avulsa && Item.Id == 0)
+                        {
+                            <Field Horizontal="true" Class="myfieldgroup">
+                                <FieldLabel Class="myfieldlabel" ColumnSize="@LargeLabelColumnSize">Valor</FieldLabel> <FieldBody Class="myfieldbodytext" ColumnSize="TextColumnSize">
+                                    <TextEdit ChangeTextOnKeyPress="false" Class="myfieldnumeric" @bind-Text="@ProgramacaoAulaTemp.ValorV" Size="Size.Small" Disabled="true"></TextEdit>
+                                </FieldBody>
+                            </Field>
+                            <Field Horizontal="true" Class="myfieldgroup">
+                                <FieldLabel Class="myfieldlabel" ColumnSize="@LargeLabelColumnSize">Financeiro</FieldLabel> <FieldBody Class="myfieldbodytext" ColumnSize="TextColumnSize">
+                                    <TextEdit ChangeTextOnKeyPress="false" Class="myfieldbodytext" @bind-Text="@ProgramacaoAulaTemp.StatusFinanceiroNome" Size="Size.Small" Disabled="true"></TextEdit>
+                                </FieldBody>
+                            </Field>
+                        }
+                        @if (Item.Status == StatusAula.Executada || OperacaoAula == TipoOperacaoAula.RegistrarAulaExecutada)
+                        {
+                            <Field Horizontal="true" Class="myfieldgroup">
+                                <FieldLabel Class="myfieldlabel" ColumnSize="@LargeLabelColumnSize">Prontuário</FieldLabel> <FieldBody Class="myfieldbodytext" ColumnSize="@LargeTextColumnSize">
+                                    <MemoEdit ChangeTextOnKeyPress="false" Class="myfieldbodytext" @bind-Text="@Item.ProntuarioAula" Size="Size.Small" Rows="5" Disabled="@(Item.Status == StatusAula.Executada)"></MemoEdit>
+                                </FieldBody>
+                            </Field>
+                        }
+                        <Field Horizontal="true" Class="myfieldgroup">
+                            <FieldLabel Class="myfieldlabel" ColumnSize="@LargeLabelColumnSize">OBS</FieldLabel> <FieldBody Class="myfieldbodytext" ColumnSize="@LargeTextColumnSize">
+                                <MemoEdit ChangeTextOnKeyPress="false" Class="myfieldbodytext" @bind-Text="@Item.OBS" Size="Size.Small" Rows="3"></MemoEdit>
+                            </FieldBody>
+                        </Field>
+                    </div>
+                    @if (Resultado2.ErrMsg != string.Empty)
+                    {
+                        <div class="myaulamsg">@Resultado2.ErrMsg</div>
+                    }
+                    <SaveCancelToolbar CancelClick="@Cancel" SaveClick="@Ok" SaveDisable="@((Item.Status==StatusAula.Cancelada || Item.Status == StatusAula.Reserva) || (Item.Status==StatusAula.Executada && ProfessorId != 0))" />
+                }
+            </ModalBody>
+            <ModalFooter>
+            </ModalFooter>
+        </ModalContent>
+    </Modal>
+
+}
+
+
+

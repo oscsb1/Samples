@@ -1,0 +1,220 @@
+﻿@page "/StudioPages/Operacoes/AprovacaoPlano/{Id}"
+
+@using InCorpApp.Pages.Componentes
+@using InCorpApp.Constantes
+@using InCorpApp.Models
+@using Blazorise.DataGrid
+@using System.Globalization
+
+@using Blazorise
+
+
+@layout LoginLayout
+
+@inherits AprovacaoPlanoBase
+<AuthorizeView>
+    <NotAuthorized>
+        @if (Aprovado == 1)
+        {
+            <p>Aprovação realizado com sucesso, obrigado.</p>
+        }
+        else
+        {
+            if (Aprovado == 2)
+            {
+                <p>Aprovação não realizada...</p>
+            }
+            else
+            {
+                if (Aprovado == 3)
+                {
+                    <p>Aprovação não realizada...</p>
+                    <p>@Resultado.ErrMsg</p>
+                }
+                else
+                {
+
+                    <div>
+
+                        @if (ShowConfirmacaoAprov)
+                        {
+                            <SFConfirmacao HdrTitulo="Aprovação do plano" BodyTitulo=@("Confirmação a aprovação do plano?") OnCancel="@OnNaoAprovoClick" OnOk="OnProcessarAprovacao"> </SFConfirmacao>
+                        }
+                        else
+                        {
+                            @if (!Isloading)
+                            {
+
+                                <div class="mycliframe">
+                                    <div class="myclimainhdh">
+                                        <p class="mycliminhdhp">The Pilates Studio Brasil - Kansas</p>
+                                    </div>
+                                    <div class="myclihdh">
+                                        @foreach (string s in MsgHDRL)
+                                        {
+                                            <p class="myclihdrline">@s</p>
+                                        }
+                                    </div>
+                                    @if (Plano.TipoPlano == TipoPlano.PacoteQtdeAula)
+                                    {
+                                        <p></p>
+                                        <div class="myclihdh">
+                                            @foreach (string s in MsgPacoteAulaL)
+                                            {
+                                                <p class="myclihdrline">@s</p>
+                                            }
+                                            <p></p>
+                                            <Table Bordered="true" Hoverable="true" Responsive="true" Narrow="true" Class="table-sm myclitable">
+                                                <TableBody Class="myclitablebody">
+                                                    <TableRow Class="myclitablerowparcela">
+                                                        <TableRowCell Class="mytablebodyrowcellaula">Aula</TableRowCell>
+                                                        <TableRowCell Class="mytablebodyrowcellaula">Quantidade</TableRowCell>
+                                                        @if (AlunoPlano.Status == StatusPlanoAluno.Ativo || AlunoPlano.Status == StatusPlanoAluno.Encerrado)
+                                                        {
+                                                            <TableRowCell Class="mytablebodyrowcellaula">Saldo</TableRowCell>
+                                                        }
+                                                    </TableRow>
+                                                    @foreach (var au in AlunoPlano.Aulas)
+                                                    {
+                                                        <TableRow Class="myclitablerowparcela">
+                                                            <TableRowCell Class="mytablebodyrowcellaula">@au.Aula.Nome</TableRowCell>
+                                                            <TableRowCell Class="mytablebodyrowcellaula">@au.QtdeAulas</TableRowCell>
+                                                            @if (AlunoPlano.Status == StatusPlanoAluno.Ativo || AlunoPlano.Status == StatusPlanoAluno.Encerrado)
+                                                            {
+                                                                <TableRowCell Class="mytablebodyrowcellaula">@(@au.QtdeAulas - @au.TotalAulasFeitas)</TableRowCell>
+                                                            }
+                                                        </TableRow>
+                                                    }
+                                                </TableBody>
+                                            </Table>
+                                        </div>
+                                        <p></p>
+                                        if (AlunoPlano.Status == StatusPlanoAluno.Ativo)
+                                        {
+                                            <p class="myclititulo">Extrato das aulas</p>
+                                            <div class="myclibody">
+                                                <Table Bordered="true" Hoverable="true" Responsive="true" Narrow="true" Class="table-sm myclitable">
+                                                    <TableBody Class="myclitablebody">
+                                                        @foreach (var m in Qaulas)
+                                                        {
+                                                            <TableRow Class="myclitablebodyrowvalor">
+                                                                <TableRowCell Class="myclitablebodyrowcellmes">@m.MesAno</TableRowCell>
+                                                            </TableRow>
+                                                            foreach (var la in m.Aulas)
+                                                            {
+                                                                <TableRow Class="myclitablebodyrowaula">
+                                                                    <TableRowCell>    </TableRowCell>
+                                                                    @foreach (var laa in la)
+                                                                    {
+                                                                        <TableRowCell Class="mytablebodyrowcellaula">@laa.Diadd @laa.DiaVShort @laa.HoraInicioV @laa.ProfessorNome @laa.AulaNome @laa.StatusNome</TableRowCell>
+                                                                    }
+                                                                </TableRow>
+                                                            }
+                                                        }
+
+                                                    </TableBody>
+                                                </Table>
+                                            </div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <p class="myclititulo">Cronograma das aulas</p>
+                                        <div class="myclibody">
+                                            <Table Bordered="true" Hoverable="true" Responsive="true" Narrow="true" Class="table-sm myclitable">
+                                                <TableBody Class="myclitablebody">
+                                                    @foreach (var m in Qaulas)
+                                                    {
+                                                        <TableRow Class="myclitablebodyrowvalor">
+                                                            <TableRowCell Class="myclitablebodyrowcellmes">@m.MesAno</TableRowCell>
+                                                            <TableRowCell Class="myclitablebodyrowcellvalor" ColumnSpan="2">@m.Valor.ToString("C2", Constante.Culture)</TableRowCell>
+                                                        </TableRow>
+                                                        foreach (var la in m.Aulas)
+                                                        {
+                                                <TableRow Class="myclitablebodyrowaula">
+                                                    <TableRowCell>    </TableRowCell>
+                                                    @foreach (var laa in la)
+                                                    {
+                                                        if (AlunoPlano.Status == StatusPlanoAluno.Ativo)
+                                                        {
+                                                            if (AlunoPlano.Aulas.Count > 1)
+                                                            {
+                                                                <TableRowCell Class="mytablebodyrowcellaula">@laa.Diadd @laa.DiaVShort @laa.HoraInicioV @laa.ProfessorNome @laa.AulaNome @laa.StatusNome</TableRowCell>
+                                                            }
+                                                            else
+                                                            {
+                                                                <TableRowCell Class="mytablebodyrowcellaula">@laa.Diadd @laa.DiaVShort @laa.HoraInicioV @laa.ProfessorNome @laa.StatusNome</TableRowCell>
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            if (AlunoPlano.Aulas.Count > 1)
+                                                            {
+                                                                <TableRowCell Class="mytablebodyrowcellaula">@laa.Diadd @laa.DiaVShort @laa.HoraInicioV @laa.ProfessorNome @laa.AulaNome</TableRowCell>
+                                                            }
+                                                            else
+                                                            {
+                                                                <TableRowCell Class="mytablebodyrowcellaula">@laa.Diadd @laa.DiaVShort @laa.HoraInicioV @laa.ProfessorNome</TableRowCell>
+                                                            }
+   
+                                                        }
+                                                    }
+                                                </TableRow>
+                                                        }
+                                                    }
+
+                                                </TableBody>
+                                            </Table>
+                                        </div>
+                                    }
+                                    <p class="myclititulo">Cronograma do investimento</p>
+                                    <div class="myclibody">
+                                        <Table Bordered="true" Hoverable="true" Responsive="true" Narrow="true" Class="table-sm myclitable">
+                                            <TableBody Class="myclitablebody">
+                                                @foreach (var m in Parcelas)
+                                                {
+                                                    <TableRow Class="myclitablerowparcela">
+                                                        <TableRowCell Class="mytablebodyrowcellparcela">@m.DataVenctoV</TableRowCell>
+                                                        <TableRowCell Class="mytablebodyrowcellparcela">@m.Valor.ToString("C2", Constante.Culture)</TableRowCell>
+                                                        @if (AlunoPlano.Status == StatusPlanoAluno.Ativo)
+                                                        {
+                                                            <TableRowCell Class="mytablebodyrowcellaula">@m.StatusNome</TableRowCell>
+                                                        }
+
+                                                    </TableRow>
+                                                }
+
+                                            </TableBody>
+                                        </Table>
+
+                                    </div>
+                                    <div class="myclifooter">
+                                        <p></p>
+                                        @foreach (string s in MsgFooterL)
+                                        {
+                                            <p class="myclihdrline">@s</p>
+                                        }
+                                        <p> </p>
+                                        @if (AlunoPlano.Status == StatusPlanoAluno.Ativo)
+                                        {
+                                            <SaveCancelToolbar SaveVisivel="false" CancelClick="OnNaoAprovoClick" CancelCaption="Sair" CancelIconClass="" />
+                                        }
+                                        else
+                                        {
+                                            <SaveCancelToolbar SaveCaption="Aprovar" SaveClick="OnAprovoClick" SaveDisable="@(AlunoPlano.Status != StatusPlanoAluno.PendenteConfirmacao)" SaveIconClass="fa fa-thumbs-up" CancelClick="OnNaoAprovoClick" CancelCaption="Sair sem aprovar" CancelIconClass="fa fa-thumbs-down" />
+                                        }
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <SFSpinner IsLoading="@Isloading" />
+                            }
+                        }
+
+                    </div>
+                }
+            }
+        }
+    </NotAuthorized>
+</AuthorizeView>

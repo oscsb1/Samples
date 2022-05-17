@@ -1,0 +1,84 @@
+﻿@using InCorpApp.Models
+@using InCorpApp.Pages.Componentes
+@using InCorpApp.Constantes
+@using InCorpApp.Shared
+
+
+@layout StudioLayout
+
+@inherits ProgAulaHistBase
+
+
+
+<AuthorizeView Roles="@(@Constante.RoleAdmUser() + "," + @Constante.RoleProfessor())">
+
+    <Authorized>
+
+        <Modal @ref="@Modal" Closing="@OnModalClosing" >
+             
+            <ModalContent Centered="true" Size="ModalSize.Large" Style="max-height:650px" id="modalcontent" >
+                <ModalHeader Class="myhdrmodal">
+                    <ModalTitle Class="mytitlemodal" Style="text-align:center">@HdrTitulo</ModalTitle>
+                    <Button Clicked="@Cancel" Class="close" Style="color:white">&times;</Button>
+                </ModalHeader>
+                <ModalBody>
+
+                    <SFContextForm Titulo="Histórico de alterações">
+                        <SFHeaderContextForm>
+                        </SFHeaderContextForm>
+                        <SFBodyContextForm>
+                            <p></p>
+
+                            @if (Items != null)
+                            {
+                                <div class="table-responsive-xl mytableresp" id="modaltable" style="max-height:500px;" onscroll="scrolltb('tabler')">
+                                    <DataGrid Hoverable="true" Responsive="false" TItem="ProgramacaoAulaHist" Data="@Items"
+                                              SelectedRowStyling="SelectedRowStyle"
+                                              PageSize="Constante.Pagesize" Sortable="true" Narrow="true"
+                                              ShowPager="false" Class="mygrid" Style="font-size:10px;" HeaderRowStyling="@Constante.DataFilterRowStyling()" >
+
+                                        <ChildContent>
+                                            <DataGridColumn HeaderCellClass="sticky-header" FilterCellClass="sticky-header-filter" Width="300px" TItem="ProgramacaoAulaHist" Field="@nameof(ProgramacaoAulaHist.StatusAntNome)" Caption="De" />
+                                            <DataGridColumn HeaderCellClass="sticky-header" FilterCellClass="sticky-header-filter" Width="300px" TItem="ProgramacaoAulaHist" Field="@nameof(ProgramacaoAulaHist.StatusDepNome)" Caption="Para" />
+                                            <DataGridColumn HeaderCellClass="sticky-header" FilterCellClass="sticky-header-filter" Width="300px" TItem="ProgramacaoAulaHist" Field="@nameof(ProgramacaoAulaHist.ProfessorAnt)" Caption="De" />
+                                            <DataGridColumn HeaderCellClass="sticky-header" FilterCellClass="sticky-header-filter" Width="300px" TItem="ProgramacaoAulaHist" Field="@nameof(ProgramacaoAulaHist.ProfessorDep)" Caption="Para" />
+                                            <DataGridColumn HeaderCellClass="sticky-header" FilterCellClass="sticky-header-filter" Width="300px" TItem="ProgramacaoAulaHist" Field="@nameof(ProgramacaoAulaHist.DataProgramadaAntV)" Caption="De" />
+                                            <DataGridColumn HeaderCellClass="sticky-header" FilterCellClass="sticky-header-filter" Width="300px" TItem="ProgramacaoAulaHist" Field="@nameof(ProgramacaoAulaHist.DataProgramadaDepV)" Caption="Para" />
+                                            <DataGridColumn HeaderCellClass="sticky-header" FilterCellClass="sticky-header-filter" Width="300px" TItem="ProgramacaoAulaHist" Field="@nameof(ProgramacaoAulaHist.HoraInicioAnt)" Caption="De" />
+                                            <DataGridColumn HeaderCellClass="sticky-header" FilterCellClass="sticky-header-filter" Width="300px" TItem="ProgramacaoAulaHist" Field="@nameof(ProgramacaoAulaHist.HoraInicioDep)" Caption="Para" />
+                                            <DataGridColumn HeaderCellClass="sticky-header" FilterCellClass="sticky-header-filter" Width="300px" TItem="ProgramacaoAulaHist" Field="@nameof(ProgramacaoAulaHist.ValorAntV)" Caption="De" />
+                                            <DataGridColumn HeaderCellClass="sticky-header" FilterCellClass="sticky-header-filter" Width="300px" TItem="ProgramacaoAulaHist" Field="@nameof(ProgramacaoAulaHist.ValorDepV)" Caption="Para" />
+                                            <DataGridColumn HeaderCellClass="sticky-header" FilterCellClass="sticky-header-filter" Width="300px" TItem="ProgramacaoAulaHist" Field="@nameof(ProgramacaoAulaHist.Obs)" Caption="Obs" />
+                                            <DataGridColumn HeaderCellClass="sticky-header" FilterCellClass="sticky-header-filter" Width="300px" TItem="ProgramacaoAulaHist" Field="@nameof(ProgramacaoAulaHist.UserName)" Caption="Usuário" />
+                                            <DataGridColumn HeaderCellClass="sticky-header" FilterCellClass="sticky-header-filter" Width="300px" TItem="ProgramacaoAulaHist" Field="@nameof(ProgramacaoAulaHist.DataAltV)" Caption="Data" />
+
+                                        </ChildContent>
+
+                                    </DataGrid>
+                                </div>
+
+                            }
+                        </SFBodyContextForm>
+                    </SFContextForm>
+
+                    </ModalBody>
+                </ModalContent>
+            </Modal>
+        
+
+    </Authorized>
+
+</AuthorizeView>
+
+
+
+
+
+
+
+
+
+
+
+
+

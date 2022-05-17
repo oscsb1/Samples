@@ -1,0 +1,99 @@
+﻿
+@using InCorpApp.Pages.Componentes
+@using InCorpApp.Models
+
+@using System.Globalization
+@using Blazorise.Components
+@using InCorpApp.Constantes
+
+
+@inject IAuthorizationService authorizationService
+@layout StudioLayout
+
+@inherits AulaAgendaOperacaoBase
+
+@if (Item != null)
+{
+
+    <Modal @ref="@Modal" Closing="@OnModalClosing">
+
+        <ModalContent Centered="true" Size="ModalSize.Default">
+            <ModalHeader Class="myhdrmodal">
+                <ModalTitle Class="mytitlemodal" Style="text-align:center">@HdrTitulo</ModalTitle>
+            </ModalHeader>
+            <ModalBody>
+                @if (Item != null)
+                {
+                    @if (ShowConfimaProfDif)
+                    {
+                        <SFConfirmacao HdrTitulo="Registro de aula em grupo" Saving="@Processando" BodyTitulo="@("Confirma aula dada pelo professor " + Item.ProfessorNome + "(a) ?")" OnCancel="@OnCancelRegistro" OnOk="@OnConfirmaRegistro" />
+                    }
+                    else
+                    {
+                        if (!Item.Registro)
+                        {
+                            if (Dia <= Constante.Today)
+                            {
+                                <Row>
+                                    <Button Class="btn-outline-primary mybtauladet" Clicked="@RegistrarClick" Disabled="@DisableBT">Registrar aula</Button>
+                                </Row>
+                            }
+                        }
+                        else
+                        {
+
+                            <Row>
+                                <Button Class="btn-outline-primary mybtauladet" Clicked="@ReabrirClick" Disabled="@DisableBT">Reabrir aula</Button>
+                            </Row>
+                        }
+                        if (!Item.Registro)
+                        {
+                            <Row>
+                                <Button Class="btn-outline-primary mybtauladet" Clicked="@MudarProfessorSalaClick" Disabled="@DisableBT">Trocar professor ou sala</Button>
+                            </Row>
+                        }
+                    }
+                    <p></p>
+                    <ErrMsg ErroMessage="@Resultado.ErrMsg">
+                    </ErrMsg>
+                    <p></p>
+                    <div>
+                        <Field Horizontal="true" Class="myfieldgroup">
+                            <FieldLabel Class="myfieldlabel" ColumnSize="@LargeLabelColumnSize">Aula</FieldLabel> <FieldBody Class="myfieldbodytext" ColumnSize="@LargeTextColumnSize">
+                                <TextEdit ChangeTextOnKeyPress="false" Class="myfieldbodytext" @bind-Text="@Item.AulaNome" Size="Size.Small" Disabled="true"></TextEdit>
+                            </FieldBody>
+                        </Field>
+
+                        @if (Professores.Count > 0)
+                        {
+                            <Field Horizontal="true" Class="myfieldgroup">
+                                <FieldLabel Class="myfieldlabel" ColumnSize="@LargeLabelColumnSize">Professor</FieldLabel>
+                                <FieldBody Class="myfieldbodytext" ColumnSize="@TextColumnSize">
+                                    <SelectList Data="@Professores" TextField="@((item) => item.Nome)" Class="myselect" Disabled="@(!DisableBT)"
+                                                ValueField="@((item) => item.Id)" TValue="int" TItem="Professor"
+                                                SelectedValue="@Item.ProfessorId" SelectedValueChanged="@MyListProfessorValueChangedHandler" />
+                                </FieldBody>
+                            </Field>
+                        }
+                        <Field Horizontal="true" Class="myfieldgroup">
+                            <FieldLabel Class="myfieldlabel" ColumnSize="@LargeLabelColumnSize">Sala</FieldLabel>
+                            <FieldBody Class="myfieldbodytext" ColumnSize="@TextColumnSize">
+                                <SelectList Data="@StudioSalas" TextField="@((item) => item.Nome)" Class="myselect" Disabled="@(!DisableBT)"
+                                            ValueField="@((item) => item.Id)" TValue="int" TItem="StudioSala"
+                                            SelectedValue="@Item.StudioSalaId" SelectedValueChanged="@MyListSalaValueChangedHandler" />
+                            </FieldBody>
+                        </Field>
+
+                    </div>
+                    <SaveCancelToolbar CancelClick="@Cancel" SaveClick="@Ok" />
+                }
+            </ModalBody>
+            <ModalFooter>
+            </ModalFooter>
+        </ModalContent>
+    </Modal>
+
+}
+
+
+
